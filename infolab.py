@@ -11,10 +11,7 @@ def execute_on_remote(host, command):
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     
     try:
-        # Connect to the remote machine
         client.connect(host, username=user, password=password)
-        
-        # Execute the command
         stdin, stdout, stderr = client.exec_command(command)
         
         # Handle sudo password prompt
@@ -28,16 +25,22 @@ def execute_on_remote(host, command):
         print(stderr.read().decode())
     
     finally:
-        # Close the connection
         client.close()
 
-# Function to display menu and get user input
 def change_background():
+    background_image_path1 = "/opt/netacad-vm-background.jpg"
+    background_image_path2 = "/opt/netacad-vm-background-datacenter-bg.jpg"
+    # For Gnome
+    bash_command = f"gsettings set org.gnome.desktop.background picture-uri 'file://{background_image_path2}'"
+    # For MATE
+    bash_command = f"gsettings set org.mate.background picture-filename {background_image_path1}"
     
+    with ThreadPoolExecutor() as executor:
+        executor.map(lambda machine: execute_on_remote(machine, bash_command), machines)
+
     return
 
-# Function to update all machines
-def update_all_machines():
+def update_machines():
     update_command = f"echo '{password}' | sudo -S apt-get update && sudo -S apt-get upgrade -y"
     
     # Without threads
@@ -48,20 +51,18 @@ def update_all_machines():
     
     print("Starting updates on all machines...")
 
-    # Run the update command in parallel on all machines
+    # With threads
     with ThreadPoolExecutor() as executor:
         executor.map(lambda machine: execute_on_remote(machine, update_command), machines)
 
     print("Updates initiated on all machines.")
 
-# Function to create a file
 def create_file():
     bash_command = "touch hello-testing"
     
     for machine in machines:
         execute_on_remote(machine, bash_command)
 
-# Function to display menu and get user input
 def display_menu():
     print("\n--- Management Menu ---")
     print("0. Exit")
@@ -82,7 +83,7 @@ while True:
     elif choice == "1":
         change_background()
     elif choice == "2":
-        update_all_machines()
+        update_machines()
     elif choice == "3":
         create_file()
     else:
