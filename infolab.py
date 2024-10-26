@@ -7,7 +7,7 @@ password = "98853442"
 
 # Populate machines with the valid IP addr
 machines = []
-for i in range (102, 103): #TODO Set range here
+for i in range (102, 104): #TODO Set range here 102, 126
     # Aceste calculatoare nu merg
     if i == 113 or i == 122:
         continue
@@ -99,7 +99,7 @@ def display_menu():
     print("4. Remove a program")
     print("99. Testing (create a file)")
     
-    choice = input("Enter your choice: ")
+    choice = int(input("Enter your choice: "))
     return choice
 
 # Main program loop
