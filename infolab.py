@@ -1,9 +1,18 @@
 import paramiko
 from concurrent.futures import ThreadPoolExecutor
+from scp import SCPClient
 
-user = "cisco"
-password = "password"
-machines = ["192.168.0.174", "192.168.0.106"]
+user = "ael"
+password = "98853442"
+
+# Populate machines with the valid IP addr
+machines = []
+for i in range (102, 103): #TODO Set range here
+    # Aceste calculatoare nu merg
+    if i == 113 or i == 122:
+        continue
+    ip_add = '10.10.10.' + str(i)
+    machines.append(ip_add)
 
 # Function to run a bash command on a remote machine
 def execute_on_remote(host, command):
@@ -28,17 +37,21 @@ def execute_on_remote(host, command):
         client.close()
 
 def change_background():
-    background_image_path1 = "/opt/netacad-vm-background.jpg"
-    background_image_path2 = "/opt/netacad-vm-background-datacenter-bg.jpg"
-    # For Gnome
-    command = f"gsettings set org.gnome.desktop.background picture-uri 'file://{background_image_path2}'"
-    # For MATE
-    command = f"gsettings set org.mate.background picture-filename {background_image_path1}"
-    
+    background_image_path = "/usr/share/backgrounds/Clouds_by_Tibor_Mokanszki.jpg"
+    # Gnome
+    command = f"gsettings set org.gnome.desktop.background picture-uri 'file://{background_image_path}'"
+    # MATE
+    # command = f"gsettings set org.mate.background picture-filename {background_image_path}"
     with ThreadPoolExecutor() as executor:
         executor.map(lambda machine: execute_on_remote(machine, command), machines)
-
     return
+
+# Function to copy the script to the remote machine and make it run at intervals
+def change_background_regularly():
+    #TODO 
+    command = "touch hello-testing"
+    for machine in machines:
+        execute_on_remote(machine, command)
 
 def update_machines():
     command = f"echo '{password}' | sudo -S apt-get update && sudo -S apt-get upgrade -y"
@@ -50,25 +63,22 @@ def update_machines():
     # print("Updates complete on all machines.")
     
     print("Starting updates on all machines...")
-
+    
     # With threads
     with ThreadPoolExecutor() as executor:
         executor.map(lambda machine: execute_on_remote(machine, command), machines)
-
     print("Updates initiated on all machines.")
 
 def create_file():
-    bash_command = "touch hello-testing"
-    
+    command = "touch hello-testing"
     for machine in machines:
-        execute_on_remote(machine, bash_command)
+        execute_on_remote(machine, command)
 
 def install_program():
     print("What program do you want to install?")
     program_name = input()
     command = f"echo '{password}' | sudo -S apt install '{program_name}' -y"
     print("Installation initiated on all machines.")
-    
     with ThreadPoolExecutor() as executor:
         executor.map(lambda machine: execute_on_remote(machine, command), machines)
 
@@ -77,7 +87,6 @@ def remove_program():
     print("What program do you want to remove?")
     program_name = input()
     command = f"echo '{password}' | sudo -S apt remove '{program_name}' -y"
-    
     with ThreadPoolExecutor() as executor:
         executor.map(lambda machine: execute_on_remote(machine, command), machines)
 
@@ -86,9 +95,9 @@ def display_menu():
     print("0. Exit")
     print("1. Change background on all machines")
     print("2. Update all machines")
-    print("3. Create a file")
-    print("4. Install a program")
-    print("5. Remove a program")
+    print("3. Install a program")
+    print("4. Remove a program")
+    print("99. Testing (create a file)")
     
     choice = input("Enter your choice: ")
     return choice
@@ -97,18 +106,19 @@ def display_menu():
 while True:
     choice = display_menu()
     
-    if choice == "0":
-        print("Exiting...")
-        break
-    elif choice == "1":
-        change_background()
-    elif choice == "2":
-        update_machines()
-    elif choice == "3":
-        create_file()
-    elif choice == "4":
-        install_program()
-    elif choice == "5":
-        remove_program()
-    else:
-        print("Invalid choice. Please try again.")
+    match choice:
+        case 0:
+            print("Exiting...")
+            break
+        case 1:
+            change_background()
+        case 2:
+            update_machines()
+        case 3:
+            install_program()
+        case 4:
+            remove_program()
+        case 99:
+            create_file()
+        case _:
+            print("Invalid choice. Please try again.")
